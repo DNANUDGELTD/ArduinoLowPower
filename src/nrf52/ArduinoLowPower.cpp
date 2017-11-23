@@ -78,18 +78,18 @@ void ArduinoLowPowerClass::deepSleep() {
 }
 
 void ArduinoLowPowerClass::setAlarmIn(uint32_t millis) {
-	nrf_rtc_prescaler_set(NRF_RTC1, 32);
+	nrf_rtc_prescaler_set(NRF_RTC2, 32);
 	//enable interrupt
-	NVIC_SetPriority(RTC1_IRQn, 2); //high priority
-	NVIC_ClearPendingIRQ(RTC1_IRQn);
-	NVIC_EnableIRQ(RTC1_IRQn);
-	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0);
-	nrf_rtc_int_enable(NRF_RTC1, NRF_RTC_INT_COMPARE0_MASK);
+	NVIC_SetPriority(RTC2_IRQn, 2); //high priority
+	NVIC_ClearPendingIRQ(RTC2_IRQn);
+	NVIC_EnableIRQ(RTC2_IRQn);
+	nrf_rtc_event_clear(NRF_RTC2, NRF_RTC_EVENT_COMPARE_0);
+	nrf_rtc_int_enable(NRF_RTC2, NRF_RTC_INT_COMPARE0_MASK);
 	//Tick every 1 ms 
-	nrf_rtc_cc_set(NRF_RTC1, 0, millis);
+	nrf_rtc_cc_set(NRF_RTC2, 0, millis);
 	
 	//start RTC
-	nrf_rtc_task_trigger(NRF_RTC1, NRF_RTC_TASK_START);
+	nrf_rtc_task_trigger(NRF_RTC2, NRF_RTC_TASK_START);
 }
 
 void ArduinoLowPowerClass::attachInterruptWakeup(uint32_t pin, voidFuncPtr callback, uint32_t mode) {
@@ -129,9 +129,9 @@ void ArduinoLowPowerClass::enableWakeupFrom(wakeup_reason peripheral, uint32_t p
 		if(pin > 20)// allow wake up only from digital and analog pins
 			return;
 		if(event==LOW)
-			nrf_gpio_cfg_sense_input(g_APinDescription[pin].ulPin, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+			nrf_gpio_cfg_sense_input( g_ADigitalPinMap[pin], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
 		else
-			nrf_gpio_cfg_sense_input(g_APinDescription[pin].ulPin, NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
+			nrf_gpio_cfg_sense_input( g_ADigitalPinMap[pin], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
 	}
 }
 
@@ -161,12 +161,12 @@ ArduinoLowPowerClass LowPower;
 extern "C"{
 #endif	
 
-void RTC1_IRQHandler(void)
+void RTC2_IRQHandler(void)
 {
 	event=true;
-	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0);
-	nrf_rtc_task_trigger(NRF_RTC1, NRF_RTC_TASK_CLEAR);
-	nrf_rtc_task_trigger(NRF_RTC1, NRF_RTC_TASK_STOP);
+	nrf_rtc_event_clear(NRF_RTC2, NRF_RTC_EVENT_COMPARE_0);
+	nrf_rtc_task_trigger(NRF_RTC2, NRF_RTC_TASK_CLEAR);
+	nrf_rtc_task_trigger(NRF_RTC2, NRF_RTC_TASK_STOP);
 	if(functionPointer)
 		functionPointer();		
 }

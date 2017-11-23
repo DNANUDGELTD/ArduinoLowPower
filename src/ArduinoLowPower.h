@@ -2,6 +2,9 @@
 #define _ARDUINO_LOW_POWER_H_
 
 #include <Arduino.h>
+#include "nrf_soc.h"
+#include "nrf_lpcomp.h"
+#include "nrf_gpio.h"
 
 #ifdef ARDUINO_ARCH_AVR
 #error The library is not compatible with AVR boards
@@ -28,6 +31,11 @@ typedef enum{
 	ANALOG_COMPARATOR_WAKEUP = 3
 } wakeup_reason;
 
+typedef enum{
+	DOWN = 0,
+	UP = 1,
+	CROSS = 2,
+} detect_mode;
 
 class ArduinoLowPowerClass {
 	public:
