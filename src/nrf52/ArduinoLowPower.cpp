@@ -80,7 +80,7 @@ void ArduinoLowPowerClass::deepSleep(bool isRAMRetention) {
 	NRF_TWIS1 ->ENABLE = (TWIS_ENABLE_ENABLE_Disabled << TWIS_ENABLE_ENABLE_Pos);	//disable TWI Slave
 	
 	// Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
-    nrf_delay_ms(1);
+    nrf_delay_us(1000);
 
 	//Enter in System OFF mode
 	sd_power_system_off();
