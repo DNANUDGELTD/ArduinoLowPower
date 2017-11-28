@@ -5,6 +5,7 @@
 #include "nrf_soc.h"
 #include "nrf_lpcomp.h"
 #include "nrf_gpio.h"
+#include "nrf_delay.h"
 
 #ifdef ARDUINO_ARCH_AVR
 #error The library is not compatible with AVR boards
