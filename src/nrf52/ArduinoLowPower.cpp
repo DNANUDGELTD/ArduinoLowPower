@@ -45,11 +45,14 @@ void ArduinoLowPowerClass::idle(uint32_t millis) {
 	setAlarmIn(millis);
 	idle();
 }
-
 void ArduinoLowPowerClass::sleep() {
 	sd_power_mode_set(NRF_POWER_MODE_LOWPWR);
 	event=false;		
 	while(!event){
+		/* Clear exceptions and PendingIRQ from the FPU unit */
+		__set_FPSCR(__get_FPSCR()  & ~(FPU_EXCEPTION_MASK));      
+		(void) __get_FPSCR();
+		NVIC_ClearPendingIRQ(FPU_IRQn);
 		sd_app_evt_wait();
 	}				
 }
@@ -59,10 +62,16 @@ void ArduinoLowPowerClass::sleep(uint32_t millis) {
 	sleep();
 }
 
-void ArduinoLowPowerClass::deepSleep() {
+void ArduinoLowPowerClass::deepSleep(bool isRAMRetention) {
 	//Enter in systemOff mode only when no EasyDMA transfer is active
 	//this is achieved by disabling all peripheral that use it
-	NRF_UARTE0->ENABLE = UARTE_ENABLE_ENABLE_Disabled;								//disable UART
+	if (isRAMRetention)
+	{
+		NRF_POWER->RAMON |= (POWER_RAMON_OFFRAM0_RAM0On << POWER_RAMON_OFFRAM0_Pos) |
+                        (POWER_RAMON_OFFRAM1_RAM1On << POWER_RAMON_OFFRAM1_Pos);
+	}
+	NRF_UARTE0->ENABLE = UARTE_ENABLE_ENABLE_Disabled;
+	NRF_UART0->ENABLE = UART_ENABLE_ENABLE_Disabled;								//disable UART								//disable UART
 	NRF_SAADC ->ENABLE = (SAADC_ENABLE_ENABLE_Disabled << SAADC_ENABLE_ENABLE_Pos);	//disable ADC
 	NRF_PWM0  ->ENABLE = (PWM_ENABLE_ENABLE_Disabled << PWM_ENABLE_ENABLE_Pos);		//disable all pwm instance
 	NRF_PWM1  ->ENABLE = (PWM_ENABLE_ENABLE_Disabled << PWM_ENABLE_ENABLE_Pos);
@@ -70,9 +79,21 @@ void ArduinoLowPowerClass::deepSleep() {
 	NRF_TWIM1 ->ENABLE = (TWIM_ENABLE_ENABLE_Disabled << TWIM_ENABLE_ENABLE_Pos);	//disable TWI Master
 	NRF_TWIS1 ->ENABLE = (TWIS_ENABLE_ENABLE_Disabled << TWIS_ENABLE_ENABLE_Pos);	//disable TWI Slave
 	
+	// Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
+    nrf_delay_ms(1);
+
 	//Enter in System OFF mode
 	sd_power_system_off();
-		
+	
+	// Use data synchronization barrier and a delay to ensure that no failure
+    // indication occurs before System OFF is actually entered.
+    __DSB();
+    __NOP();
+
+    // This code will only be reached if System OFF did not work and will trigger a hard-fault which will
+    // be handled in HardFault_Handler(). If wake the up condition is already active while System OFF is triggered,
+    // then the system will go to System OFF and wake up immediately with a System RESET.
+
 	/*Only for debugging purpose, will not be reached without connected debugger*/
     while(1);
 }

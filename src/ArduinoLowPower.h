@@ -21,6 +21,8 @@
 
 #define RTC_ALARM_WAKEUP	0xFF
 
+#define FPU_EXCEPTION_MASK 0x0000009F 
+
 //typedef void (*voidFuncPtr)( void ) ;
 typedef void (*onOffFuncPtr)( bool ) ;
 
@@ -51,7 +53,7 @@ class ArduinoLowPowerClass {
 			sleep((uint32_t)millis);
 		}
 
-		void deepSleep(void);
+		void deepSleep(bool isRAMRetention);
 		void deepSleep(uint32_t millis);
 		void deepSleep(int millis) {
 			deepSleep((uint32_t)millis);
