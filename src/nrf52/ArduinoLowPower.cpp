@@ -80,22 +80,32 @@ void ArduinoLowPowerClass::deepSleep(bool isRAMRetention) {
 	NRF_TWIS1 ->ENABLE = (TWIS_ENABLE_ENABLE_Disabled << TWIS_ENABLE_ENABLE_Pos);	//disable TWI Slave
 	
 	// Workaround for PAN_028 rev1.1 anomaly 22 - System: Issues with disable System OFF mechanism
-    nrf_delay_us(1000);
+	nrf_delay_us(1000);
 
 	//Enter in System OFF mode
-	sd_power_system_off();
+  uint8_t sd_en;
+  (void) sd_softdevice_is_enabled(&sd_en);
+
+  // Enter System OFF state
+  if ( sd_en )
+  {
+    sd_power_system_off();
+  }else
+  {
+    NRF_POWER->SYSTEMOFF = 1;
+  }
 	
 	// Use data synchronization barrier and a delay to ensure that no failure
-    // indication occurs before System OFF is actually entered.
-    __DSB();
-    __NOP();
+	// indication occurs before System OFF is actually entered.
+	__DSB();
+	__NOP();
 
-    // This code will only be reached if System OFF did not work and will trigger a hard-fault which will
-    // be handled in HardFault_Handler(). If wake the up condition is already active while System OFF is triggered,
-    // then the system will go to System OFF and wake up immediately with a System RESET.
+	// This code will only be reached if System OFF did not work and will trigger a hard-fault which will
+	// be handled in HardFault_Handler(). If wake the up condition is already active while System OFF is triggered,
+	// then the system will go to System OFF and wake up immediately with a System RESET.
 
-	/*Only for debugging purpose, will not be reached without connected debugger*/
-    while(1);
+	// Only for debugging purpose, will not be reached without connected debugger
+	while(1);
 }
 
 void ArduinoLowPowerClass::setAlarmIn(uint32_t millis) {
@@ -147,7 +157,7 @@ void ArduinoLowPowerClass::enableWakeupFrom(wakeup_reason peripheral, uint32_t p
 		return;
 	}
 	if(peripheral == GPIO_WAKEUP){
-		if(pin > 20)// allow wake up only from digital and analog pins
+		if(pin > PINS_COUNT)// allow wake up only from digital and analog pins
 			return;
 		if(event==LOW)
 			nrf_gpio_cfg_sense_input( g_ADigitalPinMap[pin], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
